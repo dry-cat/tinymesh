@@ -88,11 +88,16 @@ void Mesh::holeFillMinDihedral_(Face *face, double dihedralBound) {
     }
     const int n_verts = (int)boundary.size();
 
+    for (auto vertex : boundary) {
+        std::cout << vertex->pos() << '\n';
+    }
+
     // Collect boundary halfedges
     std::unordered_map<E, Halfedge *> pair2he;
     std::unordered_map<Halfedge *, E> he2pair;
     int count = 0;
     for (auto it = face->he_begin(); it != face->he_end(); ++it) {
+        std::cout << "heStart=" << it.ptr()->rev()->src()->pos() << " heEnd=" << it.ptr()->rev()->dst()->pos() << '\n';
         const int next = (count + 1) % n_verts;
         pair2he.insert(std::make_pair(E(count, next), it.ptr()));
         he2pair.insert(std::make_pair(it.ptr(), E(count, next)));
@@ -117,9 +122,22 @@ void Mesh::holeFillMinDihedral_(Face *face, double dihedralBound) {
 
             const auto he01 = pair2he[E(i, i + 1)];
             const auto he12 = pair2he[E(i + 1, i + 2)];
+            // std::cout << "he01Start= "
+            //           << he01->rev()->src()->pos()
+            //           << " he01End= "
+            //           << he01->rev()->dst()->pos()
+            //           << '\n';
+            // std::cout << "he12Start= "
+            //           << he12->rev()->src()->pos()
+            //           << " he12End= "
+            //           << he12->rev()->dst()->pos()
+            //           << '\n';
 
             const Vec3 v01rev = he01->rev()->next()->dst()->pos();
             const Vec3 v12rev = he12->rev()->next()->dst()->pos();
+            // std::cout << "v01rev " << v01rev << '\n';
+            // std::cout << "v12rev " << v12rev << '\n';
+
             const double a01 = Pi - dihedral(v2, v0, v1, v01rev);
             const double a12 = Pi - dihedral(v0, v1, v2, v12rev);
             Wangle(i, i + 2) = std::max(a01, a12);
@@ -127,6 +145,12 @@ void Mesh::holeFillMinDihedral_(Face *face, double dihedralBound) {
             O(i, i + 2) = i + 1;
         }
     }
+
+    // std::cout << "Warea:\n";
+    // std::cout << Warea << '\n';
+
+    // std::cout << "Wangle:\n";
+    // std::cout << Wangle << '\n';
 
     for (int j = 3; j < n_verts; j++) {
         for (int i = 0; i < n_verts - j; i++) {
@@ -142,16 +166,26 @@ void Mesh::holeFillMinDihedral_(Face *face, double dihedralBound) {
                 if (abs(m - i) == 1) {
                     const auto he01 = pair2he[E(i, m)];
                     v01rev = he01->rev()->next()->dst()->pos();
+                    // std::cout << "he01Start= " << he01->rev()->src()->pos()
+                    //           << " he01End= " << he01->rev()->dst()->pos() << '\n';
+                    // std::cout << "v01rev " << v01rev << '\n';
                 } else {
                     v01rev = boundary[O(i, m)]->pos();
+                    std::cout << "O(i, m)=" << O(i, m) << '\n';
+                    std::cout << "v01rev " << v01rev << '\n';
                 }
 
                 Vec3 v12rev;
                 if (abs(k - m) == 1) {
                     const auto he12 = pair2he[E(m, k)];
                     v12rev = he12->rev()->next()->dst()->pos();
+                    // std::cout << "he12Start= " << he12->rev()->src()->pos()
+                    //           << " he12End= " << he12->rev()->dst()->pos() << '\n';
+                    // std::cout << "v12rev " << v12rev << '\n';
                 } else {
                     v12rev = boundary[O(m, k)]->pos();
+                    std::cout << "O(m, k)=" << O(m, k) << '\n';
+                    std::cout << "v12rev " << v12rev << '\n';
                 }
 
                 const double a01 = Pi - dihedral(v2, v0, v1, v01rev);
